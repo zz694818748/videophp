@@ -1,0 +1,46 @@
+{extend name="/layout" /}
+
+{block name="title"}{$code == 1 ? '成功' : '错误'}{/block}
+{block name="style"}
+<style>
+    body {
+        background-color: #4d4d4d;
+    }
+
+    .body {
+        padding-top: 2rem;
+
+    }
+
+    .msg {
+        font-size: 0.5rem;
+        color: #f37b1d;
+        text-align: center;
+        border-bottom: 1px solid #fff;
+        padding-bottom: 0.5rem;
+    }
+</style>
+{/block}
+{block name="body"}
+<div class="body">
+    <div class="msg">{$msg}</div>
+    <el-row :gutter="10">
+        <el-col :xs="24" :sm="8" :md="8">
+            <div>向我报告bug</div>
+        </el-col>
+        <el-col :xs="24" :sm="8" :md="8">
+            <div>点击注册</div>
+        </el-col>
+        <el-col :xs="24" :sm="8" :md="8">
+            <div>下载app</div>
+        </el-col>
+    </el-row>
+</div>
+
+{/block}
+<script>
+    //    {block name="vue"}
+    const App = {};
+    //    {/block}
+</script>
+

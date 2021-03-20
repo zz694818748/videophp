@@ -1,0 +1,229 @@
+{extend name="/layout" /}
+
+{block name="title"}确认注册{/block}
+{block name="style"}
+<style>
+    .body {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 0.2rem;
+        padding-top: 2rem;
+    }
+
+    .form {
+        box-shadow: 0 0 0.1rem #333;
+        background: #fff;
+        min-height: 2.5rem;
+        width: 100%;
+        padding: 0.2rem 0.3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .title {
+        font-size: 0.3rem;
+        text-align: center;
+        padding: 0.4rem 0;
+    }
+
+    @media all and (min-width: 700px) {
+        .form {
+            width: 50%;
+        }
+    }
+
+    @media all and (max-width: 699px) {
+        .leftlogo.sm-hide {
+            display: none;
+        }
+    }
+
+    .leftlogo {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        margin-right: 1rem;
+        color: #f37b1d;
+    }
+
+    .leftlogo img {
+        width: 100%;
+    }
+</style>
+{/block}
+{block name="body"}
+<div class="body">
+    <div class="leftlogo sm-hide">
+        <img src="/static/image/logo-noback.png" alt="">
+        <div>更亲近的播放器</div>
+    </div>
+    <div class="form">
+        <div class="title">{{issuccess ? '注册成功' : '账号注册'}}</div>
+        <div v-if="!issuccess">
+            <el-form label-width="0px" :model="form" :rules="rules" ref="form" label-width="100px"
+                     class="demo-ruleForm">
+                <el-form-item prop="mail">
+                    <el-input class="item" placeholder="请输入邮箱" prefix-icon="el-icon-user" v-model="form.mail">
+                        <template #append>
+                            <el-button @click="getcode">{{wait == 1 ? '发送验证码' : '邮件已发出'}}</el-button>
+                        </template>
+                    </el-input>
+
+                </el-form-item>
+
+                <el-form-item prop="code">
+                    <el-input class="item" placeholder="请输入验证码" prefix-icon="el-icon-setting" v-model="form.code">
+                    </el-input>
+                </el-form-item>
+
+                <el-form-item prop="pwd">
+                    <el-input class="item" placeholder="请输入密码" prefix-icon="el-icon-lock" v-model="form.pwd">
+                    </el-input>
+                </el-form-item>
+
+                <el-form-item prop="qpwd">
+                    <el-input class="item" placeholder="再次输入密码" prefix-icon="el-icon-lock" v-model="form.qpwd">
+                    </el-input>
+                </el-form-item>
+
+                <el-form-item>
+                    <el-button type="primary" @click="submitForm('form')">注册</el-button>
+                </el-form-item>
+            </el-form>
+
+        </div>
+    </div>
+</div>
+
+{/block}
+<script>
+    //    {block name="vue"}
+    var that
+    const {ElMessage} = ElementPlus
+    var Interval
+    const App = {
+        data() {
+            var validatemail = (rule, value, callback) => {
+                var reg = /^([a-zA-Z]|[0-9])(\w|\-)+@[a-zA-Z0-9]+\.([a-zA-Z]{2,4})$/;
+                if (reg.test(value)) {
+                    callback();
+                } else {
+                    callback(new Error('邮箱格式不正确!'));
+                }
+            };
+            var validatepwd = (rule, value, callback) => {
+                var reg = /^([a-zA-Z0-9]|[._]){6,15}$/;
+                if (reg.test(value)) {
+                    callback();
+                } else {
+                    callback(new Error('密码为6-15位数字、字母或_.'));
+                }
+            };
+            var validateqpwd = (rule, value, callback) => {
+                if (value == this.form.pwd) {
+                    callback();
+                } else {
+                    callback(new Error('两次密码不一致!'));
+                }
+            };
+            var validatecode = (rule, value, callback) => {
+                if (value.length == 6) {
+                    callback();
+                } else {
+                    callback(new Error('验证码错误'));
+                }
+            };
+            return {
+                wait: 1,
+                issuccess: false,
+                form: {
+                    mail: '694818748@qq.com',
+                    code: '',
+                    pwd: '',
+                    qpwd: ''
+                },
+                rules: {
+                    mail: [
+                        {required: true, message: '请输入邮箱', trigger: 'blur'},
+                        {validator: validatemail, trigger: 'blur'},
+                    ],
+                    code: [
+                        {required: true, message: '请输入验证码', trigger: 'blur'},
+                        {validator: validatecode, trigger: 'blur'},
+                    ],
+                    pwd: [
+                        {required: true, message: '请输入密码', trigger: 'blur'},
+                        {validator: validatepwd, trigger: 'blur'},
+                    ],
+                    qpwd: [
+                        {required: true, message: '请再次输入密码', trigger: 'blur'},
+                        {validator: validateqpwd, trigger: 'blur'},
+                    ],
+
+                }
+            };
+        },
+        created() {
+            that = this
+        },
+        methods: {
+            getcode() {
+                var reg = /^([a-zA-Z]|[0-9])(\w|\-)+@[a-zA-Z0-9]+\.([a-zA-Z]{2,4})$/;
+                if (!reg.test(that.form.mail) || that.wait != 1) return
+                $.post("{:url('mailres/getcode')}",{mail:this.form.mail}, function (res) {
+                    if (res.code != 1) {
+                        ElMessage({
+                            showClose: true,
+                            message: res.msg,
+                            type: 'error'
+                        });
+                    } else {
+                        ElMessage.success({
+                            message: '验证码已发送至邮箱',
+                            type: 'success'
+                        });
+                        that.wait = 2
+                    }
+                })
+
+            },
+            submitForm(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        this.sendajax()
+                    } else {
+                        return false;
+                    }
+                });
+            },
+            sendajax() {
+                var data = {
+                    mail: this.form.mail,
+                    code: this.form.code,
+                    pwd: this.form.pwd
+                }
+                $.post("", data, function (res) {
+                    if (res.code != 1) {
+                        ElMessage({
+                            showClose: true,
+                            message: res.msg,
+                            type: 'error'
+                        });
+                    } else {
+                        that.$confirm('点击右上角下载app吧！', '注册成功', {
+                            confirmButtonText: '确定',
+                            cancelButtonText: '取消',
+                            type: 'warning'
+                        })
+                        that.issuccess = true
+                    }
+                })
+            }
+        }
+    };
+    //    {/block}
+</script>
+

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1, user-scalable=0, minimal-ui">
+    <title>{:config('app.app_name')}-{block name="title"}标题{/block}</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="/static/js/jquery-3.1.1.min.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="/static/main.css">
+    {block name="link"}{/block}
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-plus/lib/index.full.js"></script>
+    {block name="script"}{/block}
+
+    {block name="style"}{/block}
+</head>
+<body>
+<div id="app">
+    <div class="head">
+        <div class="nav">
+            <div class="logo">
+                <img src="/static/image/logo-noback.png" alt="">
+                爱播星球
+            </div>
+
+            <div class="list">
+                <div class="item">下载</div>
+                <div class="item">注册</div>
+            </div>
+        </div>
+    </div>
+    <div class="h_content">
+            {block name="body"}{/block}
+    </div>
+
+
+
+</div>
+<script>
+
+    {block name="vue"}{/block}
+    const app = Vue.createApp(App);
+    app.use(ElementPlus);
+    app.mount("#app");
+
+    !function(n) {
+        var e = n.document,
+            t = e.documentElement,
+            i = 640,
+            d = i / 100,
+            o = "orientationchange" in n ? "orientationchange": "resize",
+            a = function() {
+                var n = t.clientWidth || 320;
+                n > 640 && (n = 640),
+                    t.style.fontSize = n / d + "px"
+            };
+        e.addEventListener && (n.addEventListener(o, a, !1), e.addEventListener("DOMContentLoaded", a, !1))
+    } (window);
+
+</script>
+</body>
+</html>
