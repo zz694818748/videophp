@@ -8,6 +8,7 @@ namespace app\api\controller;
 
 
 use app\BaseController;
+use app\help\Login;
 use think\facade\Cache;
 use think\facade\Db;
 use Tool\Mail;
@@ -19,9 +20,22 @@ class Member extends BaseController
         echo 'api/member/index';
     }
 
-
-    function login(){
-
+    function exitLogin(){
+        Cache::store('session')->delete($this->param['opid']);
+        $this->apisuccess();
+    }
+    function pwdLogin(){
+        $login = new Login();
+        $logininfo = $login->login($this->param);
+        if($logininfo === false){
+            $this->apierror($login->geterror());
+        }
+        $Cache = Cache::store('session');
+        $user = Db::name('user')->where(['id'=>$logininfo['id']])->find();
+        $sessionid = gen_uuid();
+        $user['token'] = $sessionid;
+        $Cache->set($logininfo['id'],$user,0);
+        $this->apisuccess($user);
     }
 
     function mailRegister(){
@@ -45,17 +59,20 @@ class Member extends BaseController
             'code' => $code,
             'token' => $uuid
         ];
-        $F->set($this->param['mail'],$cache,1800);
         $body = '你正在注册爱播星球会员，你的验证码为：<span style="color: #4288ce">'
             . $code .
             '</span><br>你也可以点击连接完成注册，<a href="'
             . $url . '" target="_blank">'
             . $url . '</a><br>连接和验证码有效期30分钟，非本人操作请忽略本邮件。';
-        $result = $mail->send('694818748@qq.com','注册通知',$body);
+        $result = $mail->send('694818748@qq.com',$body,'注册通知');
         if ($result){
+            $F->set($this->param['mail'],$cache,1800);
             $this->apisuccess();
         }
         $this->apierror('邮件发送失败');
+    }
+    function test(){
+
     }
 }
 

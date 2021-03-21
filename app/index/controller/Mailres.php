@@ -9,6 +9,7 @@ namespace app\index\controller;
 
 use app\api\controller\Member;
 use app\BaseController;
+use app\help\Login;
 use think\facade\Cache;
 use think\facade\Db;
 
@@ -17,11 +18,6 @@ class Mailres extends BaseController
     function register()
     {
         $cache = Cache::store('file');
-//            $ca = [
-//                'code' => '123456',
-//                'token' => 'ed191b87-f5ba-47e9-9d60-8c17c87b6d53'
-//            ];
-//            $cache->set('694818748@qq.com',$ca,18000);
         if( !$cache->has($this->param['mail']) || $cache->get($this->param['mail'])['token'] != $this->param['token']){
             $this->error('链接已过期','','',10000);
         }
@@ -52,11 +48,13 @@ class Mailres extends BaseController
         $code = $code=='' ? substr(md5($this->request->server('REQUEST_TIME')),0,6) : $code;
         $inster = [
             'code' => $code,
-            'pwd' => sha1($this->param['pwd'].$code),
+            'pwd' => $this->param['pwd'],
             'mail' => $this->param['mail'],
-            'create_time' => $this->request->server('REQUEST_TIME')
+            'createTime' => $this->request->server('REQUEST_TIME')
         ];
-        $id = $db->insertGetId($inster);
+//        $id = $db->insertGetId($inster);
+        $login = new Login();
+        $id = $login->add($inster);
         Db::name('user')->insert(['id'=>$id]);
         $cache = Cache::store('file');
         $cache->delete($this->param['mail']);

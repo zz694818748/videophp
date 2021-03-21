@@ -12,7 +12,7 @@ use think\facade\Log;
 
 class Sign
 {
-    public function handle($request, \Closure $next, $param)
+    public function handle($request, \Closure $next, $param=null)
     {
 
         $res = [
@@ -69,8 +69,8 @@ class Sign
         $reqsign = $param['sign'];
         unset($param['sign']);
         ksort($param);
-        $str = http_build_query($param);
-        if ($param['opid'] > 1000) {
+        $str = urldecode(http_build_query($param));
+        if ($param['opid'] >= 1000) {
             $token = Cache::store('session')->get($param['opid'] . '.token');
         } else {
             $token = md5($param['timestamp']);
@@ -82,6 +82,6 @@ class Sign
 
     function checkId($opid)
     {
-        return is_numeric($opid) ? (int)$opid > 1000 : false;
+        return is_numeric($opid) ? (int)$opid >= 1000 : false;
     }
 }

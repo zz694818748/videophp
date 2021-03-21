@@ -16,7 +16,7 @@ class Session extends Driver
 {
     /**
      * 架构函数
-     * @param App   $app
+     * @param App $app
      * @param array $options 参数
      */
     public function __construct(App $app, array $options = [])
@@ -24,57 +24,68 @@ class Session extends Driver
         $options['RuntimePath'] = $app->getRuntimePath();
         $this->options = $options;
     }
+
+    function getFileName($list){
+        $id = $list[0];
+        $dir1 = ceil($id / 10000);
+        $filename = $this->options['RuntimePath'] . $this->options['path'] . "\\" . $dir1 . "\\" . $id . '.txt';
+        return $filename;
+    }
     /**
      * 判断缓存
      * @access public
-     * @param  string $name 缓存变量名
+     * @param string $name 缓存变量名
      * @return bool
      */
-    function has($name){
-
-    }
-
-    /**
-     * 读取缓存
-     * @access public
-     * @param  string $name 缓存变量名
-     * @param  mixed  $default 默认值
-     * @return mixed
-     */
-    function get($name, $default=null){
-        $list = explode(".",$name);
-        $id = $list[0];
-        $dir1 = ceil($id/10000);
-        $filename = $this->options['RuntimePath'].$this->options['path']."\\".$dir1."\\".$id.'.txt';
-        $data = [];
-        $res = null;
-        if(file_exists($filename)){
+    function has($name,$isget=false)
+    {
+        $list = explode(".", $name);
+        $filename = $this->getFileName($list);
+        if (file_exists($filename)) {
             $f = file_get_contents($filename);
-            $data = json_decode(strstr($f,"\r\n"),true);
-            $expire = strstr($f,"\r\n",true);
-            if ( $expire!=0){
+            $expire = strstr($f, "\r\n", true);
+            $data = json_decode(strstr($f, "\r\n"), true);
+            if ($expire != 0) {
                 $lasttime = filemtime($filename);
                 $nowtime = time();
-                if(($lasttime+$expire)<$nowtime){
+                if (($lasttime + $expire) < $nowtime) {
                     $url = iconv('utf-8', 'gbk', $filename);
                     if (PATH_SEPARATOR == ':') { //linux
                         unlink($filename);
                     } else {  //Windows
                         unlink($url);
                     }
-                    return $default;
+                    return false;
                 }
+                return $isget ? $data : true;
             }
+            return $isget ? $data : true;
         }
+        return false;
+    }
+
+    /**
+     * 读取缓存
+     * @access public
+     * @param string $name 缓存变量名
+     * @param mixed $default 默认值
+     * @return mixed
+     */
+    function get($name, $default = null)
+    {
+        $list = explode(".", $name);
+        $data = $this->has($name,true);
+        if($data === false) return $default;
+        $res = null;
         $t = &$data;
-        if(($count = count($list))>1){
-            for ($i=1 ;$i<$count;$i++){
+        if (($count = count($list)) > 1) {
+            for ($i = 1; $i < $count; $i++) {
                 $t = &$t[$list[$i]];
-                if($i==$count-1){
+                if ($i == $count - 1) {
                     $res = $t;
                 }
             }
-        }else{
+        } else {
             $res = $t;
         }
         return is_null($res) ? $default : $res;
@@ -84,38 +95,37 @@ class Session extends Driver
     /**
      * 写入缓存
      * @access public
-     * @param  string            $name 缓存变量名
-     * @param  mixed             $value  存储数据
-     * @param  integer|\DateTime $expire  有效时间（秒）
+     * @param string $name 缓存变量名
+     * @param mixed $value 存储数据
+     * @param integer|\DateTime $expire 有效时间（秒）
      * @return bool
      */
-    public function set($name, $value, $expire = null){
-        $expire = $expire == null ? $this->options['expire'] : $expire;
-        $list = explode(".",$name);
-        $id = $list[0];
-        $dir1 = ceil($id/10000);
-        $filename = $this->options['RuntimePath'].$this->options['path']."\\".$dir1."\\".$id.'.txt';
+    public function set($name, $value, $expire = null)
+    {
+        $expire = $expire === null ? $this->options['expire'] : $expire;
+        $list = explode(".", $name);
+        $filename = $this->getFileName($list);
         $old = [];
-        if(!file_exists($filename)){
+        if (!file_exists($filename)) {
             $dir = dirname($filename);
-            if(!is_dir($dir)) {
+            if (!is_dir($dir)) {
                 mkdir($dir, 0777, true);
             }
-        }else{
-            $old = $this->get($list[0],[]);
+        } else {
+            $old = $this->get($list[0], []);
         }
         $t = &$old;
-        if(($count = count($list))>1){
-            for ($i=1 ;$i<$count;$i++){
+        if (($count = count($list)) > 1) {
+            for ($i = 1; $i < $count; $i++) {
                 $t = &$t[$list[$i]];
-                if($i==$count-1){
+                if ($i == $count - 1) {
                     $t = $value;
                 }
             }
-        }else{
+        } else {
             $t = $value;
         }
-        $result = file_put_contents($filename,$expire."\r\n".json_encode($old));
+        $result = file_put_contents($filename, $expire . "\r\n" . json_encode($old));
         if ($result) {
             clearstatcache();
             return true;
@@ -126,32 +136,55 @@ class Session extends Driver
     /**
      * 自增缓存（针对数值缓存）
      * @access public
-     * @param  string    $name 缓存变量名
-     * @param  int       $step 步长
+     * @param string $name 缓存变量名
+     * @param int $step 步长
      * @return false|int
      */
-    public function inc(string $name, int $step = 1){
+    public function inc(string $name, int $step = 1)
+    {
 
     }
 
     /**
      * 自减缓存（针对数值缓存）
      * @access public
-     * @param  string    $name 缓存变量名
-     * @param  int       $step 步长
+     * @param string $name 缓存变量名
+     * @param int $step 步长
      * @return false|int
      */
-    public function dec(string $name, int $step = 1){
+    public function dec(string $name, int $step = 1)
+    {
 
     }
 
     /**
      * 删除缓存
      * @access public
-     * @param  string $name 缓存变量名
+     * @param string $name 缓存变量名
      * @return bool
      */
-    public function delete($name): bool{
+    public function delete($name): bool
+    {
+        $list = explode(".", $name);
+        $filename = $this->getFileName($list);
+        if (file_exists($filename)) {
+            $url = iconv('utf-8', 'gbk', $filename);
+            if (PATH_SEPARATOR == ':') { //linux
+                unlink($filename);
+            } else {  //Windows
+                unlink($url);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 清除缓存
+     * @access public
+     * @return bool
+     */
+    function clear()
+    {
 
     }
 
@@ -160,15 +193,8 @@ class Session extends Driver
      * @access public
      * @return bool
      */
-    function clear(){
-
-    }
-    /**
-     * 清除缓存
-     * @access public
-     * @return bool
-     */
-    function clearTag(array $keys){
+    function clearTag(array $keys)
+    {
 
     }
 }
